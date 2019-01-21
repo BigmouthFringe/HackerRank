@@ -2,62 +2,72 @@ package main
 
 import "fmt"
 
-// entry function will calculate result from subLengths
-// subLength function will recursively calculate subLength (e.g. '(())', '()', '(((())')
+// this approach will use this stack
+type (
+	Stack struct {
+		top *node
+		length int
+	}
+	node struct {
+		value interface{}
+		prev *node
+	}
+)
 
+func NewStack() *Stack {
+	return &Stack{nil,0}
+}
+
+func (this *Stack) Pop() interface{} {
+	if this.length == 0 {
+		return nil
+	}
+
+	n := this.top
+	this.top = n.prev
+	this.length--
+	return n.value
+}
+
+func (this *Stack) Push(value interface{}) {
+	n := &node{value,this.top}
+	this.top = n
+	this.length++
+}
+
+func (this *Stack) Empty() bool {
+	return this.length == 0
+}
+
+// if element of an array is '(' - push it
+// if stack is not empty and element is ')' - pop, length + 2
 func longestValidParentheses(s string) int {
 	var result = 0
 	var length = 0
+	var stack = NewStack()
 
 	var n = len(s)
 	for i := 0; i < n; i++ {
-		for ; (i < n) && (s[i] == '('); {
-			var subLength, subShift = subLength(s, i, n)
+		if s[i] == '(' {
+			stack.Push(s[i])
+		} else if !stack.Empty() && s[i] == ')' {
+			stack.Pop()
+			length += 2
 
-			var hasPair = (i + subShift < n) && (s[i + subShift] == ')')
-			if (subLength != subShift) && !hasPair {
-				length = max(length, subLength)
-			} else {
-				length += subLength
+			if stack.Empty() {
+				result = max(result, length)
 			}
-
-			i += subShift
+		} else {
+			result = max(result, length)
+			length = 0
 		}
+	}
 
-		result = max(result, length)
-		length = 0
+	if result == 0 {
+		result = length
 	}
 
 	return result
-}
-
-func subLength(s string, i, n int) (int, int) {
-	var length = 0
-	var shift = i
-
-	// TODO: Check if redundant
-	if i >= n - 1 {
-		return length, 1
-	}
-
-	for ; (i < n - 1) && (s[i] == '('); i++ {
-		if s[i + 1] != ')' {
-			var subLength, subShift = subLength(s, i + 1, n)
-			length += subLength
-			i += subShift
-		} else {
-			length += 2; i += 2
-			break
-		}
-	}
-
-	var hasPair = (i - length > 0 && i < n) && (s[i - length] == '(' && s[i] == ')')
-	if hasPair {
-		length += 2; i++
-	}
-
-	shift = i - shift
-	return length, shift
 }
 
 // Helpers
@@ -76,7 +86,8 @@ func main() {
 	fmt.Println(longestValidParentheses("(") == 0)
 	fmt.Println(longestValidParentheses(")(") == 0)
 	fmt.Println(longestValidParentheses("()(())") == 6)
-	fmt.Println(longestValidParentheses("()(()") == 2)
+	fmt.Println(longestValidParentheses("(())(()") == 4)
 	fmt.Println(longestValidParentheses("(()())") == 6)
 	fmt.Println(longestValidParentheses("(()(()())()())") == 14)
+	fmt.Println(longestValidParentheses("(()(((()") == 2)
 }
